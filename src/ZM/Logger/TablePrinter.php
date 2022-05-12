@@ -26,12 +26,18 @@ class TablePrinter
      */
     protected $foot;
 
+    /**
+     * @var int 边界宽度
+     */
     protected $border_width;
 
+    /**
+     * @var string 值颜色
+     */
     protected $value_color = 'green';
 
     /**
-     * @var bool
+     * @var bool 是否超出宽度自动省略
      */
     protected $row_overflow_hide = false;
 
@@ -43,6 +49,12 @@ class TablePrinter
         $this->setBorderWidth($max_border_length);
     }
 
+    /**
+     * 设置值的显示颜色
+     *
+     * @param  string $color 颜色
+     * @return $this  返回当前对象
+     */
     public function setValueColor(string $color): TablePrinter
     {
         if ($color === 'random') {
@@ -58,12 +70,21 @@ class TablePrinter
         return $this;
     }
 
+    /**
+     * 设置是否超出宽度自动省略
+     *
+     * @param  bool  $hide 是否超出宽度自动省略
+     * @return $this 返回当前对象
+     */
     public function setRowOverflowHide(bool $hide = true): TablePrinter
     {
         $this->row_overflow_hide = $hide;
         return $this;
     }
 
+    /**
+     * 打印表格
+     */
     public function printAll(): void
     {
         $this->printHead();
@@ -71,16 +92,25 @@ class TablePrinter
         $this->printFoot();
     }
 
-    public function printHead()
+    /**
+     * 打印表格头
+     */
+    public function printHead(): void
     {
         echo $this->head . PHP_EOL;
     }
 
-    public function printFoot()
+    /**
+     * 打印表格尾
+     */
+    public function printFoot(): void
     {
         echo $this->foot . PHP_EOL;
     }
 
+    /**
+     * 打印表格体
+     */
     public function printBody()
     {
         $line_data = [];
@@ -88,16 +118,16 @@ class TablePrinter
         foreach ($this->params as $k => $v) {
             $k = (string) $k;
             $v = (string) $v;
-            $k_len = mb_strwidth($k); // 获取 key 的长度
-            $v_len = mb_strwidth($v); // 获取 value 的长度
-            $len = $k_len + 2 + $v_len; // 计算需要的长度
-            $valid_width = $this->border_width - 2; // 获取可用的长度
+            $k_len = mb_strwidth($k); // 获取 key 的宽度
+            $v_len = mb_strwidth($v); // 获取 value 的宽度
+            $len = $k_len + 2 + $v_len; // 计算需要的宽度
+            $valid_width = $this->border_width - 2; // 获取可用的宽度
             if ($k_len + 5 > $this->border_width - 2) { // 这个参数的 key 过长了，没有你这么用的！！
                 continue;
             }
             while (true) {
                 if (!isset($line_data[$current_line])) { // 如果行是空的，先尝试放入一个参数
-                    if ($len > $valid_width) { // 需要的长度超出一行，直接另起折行
+                    if ($len > $valid_width) { // 需要的宽度超出一行，直接另起折行
                         if ($this->row_overflow_hide) { // 如果开启了超出部分隐藏，则直接砍掉后面的东西，变成三个或四个点
                             [$partial_v, $partial_v_len] = $this->getPartialValue($v, $valid_width - $k_len - 2);
 
@@ -162,6 +192,12 @@ class TablePrinter
         }
     }
 
+    /**
+     * 设置边界最大宽度，不调用本函数的话默认为79
+     *
+     * @param  int   $border_width 边界最大宽度
+     * @return $this 返回当前对象
+     */
     public function setBorderWidth(int $border_width): TablePrinter
     {
         if ($border_width <= 0) {
@@ -175,11 +211,11 @@ class TablePrinter
         return $this;
     }
 
-    public function getConsoleLength(string $v)
-    {
-        return mb_strwidth($v);
-    }
-
+    /**
+     * 获取终端大小
+     *
+     * @return int 终端大小
+     */
     private function fetchTerminalSize(): int
     {
         if (STDIN === false) {
@@ -192,10 +228,17 @@ class TablePrinter
         return (int) explode(' ', trim($size))[1];
     }
 
-    private function getPartialValue($v, int $valid_width, int $remain = 3): array
+    /**
+     * 获取字符串的截断部分、占用宽度、截断偏移量
+     * @param  string $v           字符串
+     * @param  int    $valid_width 有效宽度
+     * @param  int    $remain      需要预留的宽度
+     * @return array  返回截断部分、占用宽度、截断偏移量
+     */
+    private function getPartialValue(string $v, int $valid_width, int $remain = 3): array
     {
         $virtual_v_offset = 0;
-        do { // 依次填入字符，直到空下了小于等于4长度的距离
+        do { // 依次填入字符，直到空下了小于等于4宽度的距离
             ++$virtual_v_offset;
             $virtual_v = mb_substr($v, 0, $virtual_v_offset);
             $used_len = mb_strwidth($virtual_v);
