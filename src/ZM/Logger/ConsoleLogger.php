@@ -12,24 +12,41 @@ class ConsoleLogger extends AbstractLogger
 {
     public const VERSION = '1.0.0-alpha';
 
+    /**
+     * 日志输出格式
+     *
+     * @var string
+     */
     public static $format = '[%date%] [%level%] %process%%body%';
 
+    /**
+     * 日志输出日期格式
+     *
+     * @var string
+     */
     public static $date_format = 'Y-m-d H:i:s';
 
     /**
-     * @var string[][] 颜色表
+     * 颜色表
+     *
+     * @var array{int, array{string}}
      */
     protected static $styles = [
-        LogLevel::EMERGENCY => ['blink', 'white', 'bg_bright_red'],
-        LogLevel::ALERT => ['white', 'bg_bright_red'],
-        LogLevel::CRITICAL => ['underline', 'red'],
-        LogLevel::ERROR => ['red'],
-        LogLevel::WARNING => ['bright_yellow'],
-        LogLevel::NOTICE => ['cyan'],
-        LogLevel::INFO => ['green'],
-        LogLevel::DEBUG => ['gray'],
+        ['blink', 'white', 'bg_bright_red'], // emergency
+        ['white', 'bg_bright_red'], // alert
+        ['underline', 'red'], // critical
+        ['red'], // error
+        ['bright_yellow'], // warning
+        ['cyan'], // notice
+        ['green'], // info
+        ['gray'], // debug
     ];
 
+    /**
+     * 等级表
+     *
+     * @var array{int, int}
+     */
     protected static $levels = [
         LogLevel::EMERGENCY, // 0
         LogLevel::ALERT, // 1
@@ -41,31 +58,44 @@ class ConsoleLogger extends AbstractLogger
         LogLevel::DEBUG, // 7
     ];
 
-    protected static $logLevel;
+    /**
+     * 当前日志等级
+     *
+     * @var int
+     */
+    protected static $log_level;
 
-    protected $exceptionHandler;
-
-    public function __construct($logLevel = LogLevel::INFO)
+    /**
+     * 创建一个 ConsoleLogger 实例
+     *
+     * @param string $level 日志等级
+     */
+    public function __construct(string $level = LogLevel::INFO)
     {
-        self::$logLevel = array_flip(self::$levels)[$logLevel];
-        //ExceptionHandler::getInstance();
+        self::$log_level = $this->castLogLevel($level);
     }
 
     /**
-     * @return string[][]
+     * 获取当前样式表
+     *
+     * @return array{int, array{string}}
      */
     public static function getStyles(): array
     {
         return self::$styles;
     }
 
-    public function colorize($string, $level): string
+    /**
+     * 获取版本号
+     */
+    public static function getVersion(): string
     {
-        $string = $this->stringify($string);
-        $styles = self::$styles[$level] ?? [];
-        return ConsoleColor::apply($styles, $string)->__toString();
+        return self::VERSION;
     }
 
+    /**
+     * 打印执行栈
+     */
     public function trace(): void
     {
         $log = "Stack trace:\n";
@@ -84,82 +114,107 @@ class ConsoleLogger extends AbstractLogger
             }
             $log .= "{$t['function']}()\n";
         }
-        $log = $this->colorize($log, LogLevel::DEBUG);
+        $log = $this->colorize($log, $this->castLogLevel(LogLevel::DEBUG));
         echo $log;
     }
 
-    public function getTrace(): string
+    /**
+     * 根据日志等级将样式应用至指定字符串
+     *
+     * @param mixed $string 日志内容
+     * @param int   $level  日志等级
+     */
+    public function colorize($string, int $level): string
     {
-//        if (self::$info_level !== null && self::$info_level == 4) {
-//            $trace = debug_backtrace()[2] ?? ['file' => '', 'function' => ''];
-//            $trace = '[' . ($trace['class'] ?? '') . ':' . ($trace['function'] ?? '') . '] ';
-//        }
-//        return $trace ?? '';
-        return '';
+        $string = $this->stringify($string);
+        $styles = self::$styles[$level] ?? [];
+        return ConsoleColor::apply($styles, $string)->__toString();
     }
 
-//        $trace = debug_backtrace()[1] ?? ['file' => '', 'function' => ''];
-//        $trace = '[' . ($trace['class'] ?? '') . ':' . ($trace['function'] ?? '') . '] ';
-
+    /**
+     * {@inheritDoc}
+     */
     public function log($level, $message, array $context = []): void
     {
-        if (!in_array($level, self::$levels, true)) {
-            throw new InvalidArgumentException();
-        }
+        $level = $this->castLogLevel($level);
 
-        if (array_flip(self::$levels)[$level] > self::$logLevel) {
+        if (!$this->shouldLog($level)) {
             return;
         }
 
         $output = str_replace(
             ['%date%', '%level%', '%body%'],
-            [date(self::$date_format), strtoupper(substr($level, 0, 4)), $message],
+            [date(self::$date_format), strtoupper(substr(self::$levels[$level], 0, 4)), $message],
             self::$format
         );
         $output = $this->interpolate($output, $context);
         echo $this->colorize($output, $level) . "\n";
     }
 
-    public static function getVersion(): string
+    /**
+     * 转换日志等级
+     */
+    private function castLogLevel(string $level): int
     {
-        return self::VERSION;
+        if (in_array($level, self::$levels, true)) {
+            return array_flip(self::$levels)[$level];
+        }
+
+        throw new InvalidArgumentException('无效的日志等级');
     }
 
-    private function stringify($item)
+    /**
+     * 将日志内容转换为字符串
+     *
+     * @param mixed $item 日志内容
+     */
+    private function stringify($item): string
     {
-        if (is_object($item) && method_exists($item, '__toString')) {
-            return $item;
+        switch (true) {
+            case is_callable($item):
+                if (is_array($item)) {
+                    if (is_object($item[0])) {
+                        return get_class($item[0]) . '@' . $item[1];
+                    }
+                    return $item[0] . '::' . $item[1];
+                }
+                return 'closure';
+            case is_string($item):
+                return $item;
+            case is_array($item):
+                return 'array' . json_encode($item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS);
+            case is_object($item):
+                return get_class($item);
+            case is_resource($item):
+                return 'resource(' . get_resource_type($item) . ')';
+            case is_null($item):
+                return 'null';
+            case is_bool($item):
+                return $item ? 'true' : 'false';
+            case is_float($item):
+            case is_int($item):
+                return (string) $item;
+            default:
+                return 'unknown';
         }
-        if (is_string($item) || is_numeric($item)) {
-            return $item;
-        }
-        if (is_callable($item)) {
-            return '{Closure}';
-        }
-        if (is_bool($item)) {
-            return $item ? '*True*' : '*False*';
-        }
-        if (is_array($item)) {
-            return json_encode(
-                $item,
-                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS
-            );
-        }
-        if (is_resource($item)) {
-            return '{Resource}';
-        }
-        if (is_null($item)) {
-            return 'NULL';
-        }
-        return '{Not Stringable Object:' . get_class($item) . '}';
     }
 
-    private function interpolate($message, array $context = [])
+    /**
+     * 判断是否应该记录该等级日志
+     */
+    private function shouldLog(int $level): bool
     {
-        if (is_array($message)) {
-            return $message;
-        }
+        return $level <= self::$log_level;
+    }
 
+    /**
+     * 插入变量到日志内容中
+     *
+     * @param string $message 日志内容
+     * @param array  $context 变量列表
+     */
+    private function interpolate(string $message, array $context = []): string
+    {
         $replace = [];
         foreach ($context as $key => $value) {
             $replace['{' . $key . '}'] = $this->stringify($value);
