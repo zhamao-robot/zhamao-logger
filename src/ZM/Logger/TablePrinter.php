@@ -41,7 +41,7 @@ class TablePrinter
      */
     protected $row_overflow_hide = false;
 
-    public function __construct(array $params, string $head = '', string $foot = '', int $max_border_length = 79)
+    public function __construct(array $params, string $head = '=', string $foot = '=', int $max_border_length = 79)
     {
         $this->params = $params;
         $this->head = $head;
@@ -206,8 +206,8 @@ class TablePrinter
             $terminal_size = $this->fetchTerminalSize();
             $this->border_width = $border_width < $terminal_size ? $border_width : $terminal_size;
         }
-        $this->head = str_pad($this->head, $this->border_width, '=');
-        $this->foot = str_pad($this->foot, $this->border_width, '=');
+        $this->head = str_pad('', $this->border_width, $this->head[0]);
+        $this->foot = str_pad('', $this->border_width, $this->foot[0]);
         return $this;
     }
 
