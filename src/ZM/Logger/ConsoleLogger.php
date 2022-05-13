@@ -29,7 +29,7 @@ class ConsoleLogger extends AbstractLogger
     /**
      * 颜色表
      *
-     * @var array{int, array{string}}
+     * @var string[][]
      */
     protected static $styles = [
         ['blink', 'white', 'bg_bright_red'], // emergency
@@ -45,7 +45,7 @@ class ConsoleLogger extends AbstractLogger
     /**
      * 等级表
      *
-     * @var array{int, int}
+     * @var string[]
      */
     protected static $levels = [
         LogLevel::EMERGENCY, // 0
@@ -85,7 +85,7 @@ class ConsoleLogger extends AbstractLogger
     /**
      * 获取当前样式表
      *
-     * @return array{int, array{string}}
+     * @return string[][]
      */
     public static function getStyles(): array
     {
