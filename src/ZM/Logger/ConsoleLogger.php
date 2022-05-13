@@ -73,6 +73,13 @@ class ConsoleLogger extends AbstractLogger
     protected $static_context = [];
 
     /**
+     * 日志记录回调
+     *
+     * @var callable[]
+     */
+    protected $log_callbacks = [];
+
+    /**
      * 创建一个 ConsoleLogger 实例
      *
      * @param string $level 日志等级
@@ -98,6 +105,22 @@ class ConsoleLogger extends AbstractLogger
     public static function getVersion(): string
     {
         return self::VERSION;
+    }
+
+    /**
+     * 添加静态上下文
+     */
+    public function addStaticContext(array $context): void
+    {
+        $this->static_context = array_merge($this->static_context, $context);
+    }
+
+    /**
+     * 添加日志记录回调
+     */
+    public function addLogCallback(callable $callback): void
+    {
+        $this->log_callbacks[] = $callback;
     }
 
     /**
@@ -155,15 +178,14 @@ class ConsoleLogger extends AbstractLogger
             self::$format
         );
         $output = $this->interpolate($output, array_merge($this->static_context, $context));
-        echo $this->colorize($output, $level) . "\n";
-    }
 
-    /**
-     * 添加静态上下文
-     */
-    public function addStaticContext(array $context): void
-    {
-        $this->static_context = array_merge($this->static_context, $context);
+        foreach ($this->log_callbacks as $callback) {
+            if ($callback($level, $output, $message, $context) === false) {
+                return;
+            }
+        }
+
+        echo $this->colorize($output, $level) . "\n";
     }
 
     /**
