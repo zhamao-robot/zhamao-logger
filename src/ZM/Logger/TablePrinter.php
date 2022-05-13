@@ -64,7 +64,7 @@ class TablePrinter
                 'red', 'green', 'blue', 'yellow', 'magenta', 'gray',
                 'bright_red', 'bright_yellow', 'bright_green', 'bright_blue', 'bright_magenta', 'bright_cyan',
             ];
-            $random = mt_rand(0, count($random_list) - 1);
+            $random = array_rand($random_list);
             $this->value_color = $random_list[$random];
         } else {
             $this->value_color = $color;
@@ -206,7 +206,7 @@ class TablePrinter
             $this->border_width = $this->fetchTerminalSize();
         } else {
             $terminal_size = $this->fetchTerminalSize();
-            $this->border_width = $border_width < $terminal_size ? $border_width : $terminal_size;
+            $this->border_width = min($border_width, $terminal_size);
         }
         $this->head = str_pad('', $this->border_width, $this->head[0]);
         $this->foot = str_pad('', $this->border_width, $this->foot[0]);
@@ -235,6 +235,7 @@ class TablePrinter
 
     /**
      * 获取字符串的截断部分、占用宽度、截断偏移量
+     *
      * @param  string $v           字符串
      * @param  int    $valid_width 有效宽度
      * @param  int    $remain      需要预留的宽度
