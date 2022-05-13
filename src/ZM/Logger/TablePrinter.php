@@ -41,6 +41,8 @@ class TablePrinter
      */
     protected $row_overflow_hide = false;
 
+    protected $terminal_size;
+
     public function __construct(array $params, string $head = '=', string $foot = '=', int $max_border_length = 79)
     {
         $this->params = $params;
@@ -216,16 +218,19 @@ class TablePrinter
      *
      * @return int 终端大小
      */
-    private function fetchTerminalSize(): int
+    public function fetchTerminalSize(): int
     {
-        if (STDIN === false) {
-            return 79;
+        if (!isset($this->terminal_size)) {
+            if (STDIN === false) {
+                return $this->terminal_size = 79;
+            }
+            $size = exec('stty size 2>/dev/null');
+            if (empty($size)) {
+                return $this->terminal_size = 79;
+            }
+            return $this->terminal_size = (int) explode(' ', trim($size))[1];
         }
-        $size = exec('stty size 2>/dev/null');
-        if (empty($size)) {
-            return 79;
-        }
-        return (int) explode(' ', trim($size))[1];
+        return $this->terminal_size;
     }
 
     /**

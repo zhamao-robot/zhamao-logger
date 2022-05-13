@@ -10,7 +10,7 @@ $data = [
     'php_version_id' => PHP_VERSION_ID,
     'info' => '并且支持中文！！',
     'path2' => __DIR__,
-    'long' => '我可以' . str_repeat('很长', 50),
+    '中文级别的key' => '我可以' . str_repeat('很长', 50),
 ];
 
 (new \ZM\Logger\TablePrinter($data))
