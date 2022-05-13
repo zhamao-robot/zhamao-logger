@@ -17,7 +17,7 @@ class ConsoleLogger extends AbstractLogger
      *
      * @var string
      */
-    public static $format = '[%date%] [%level%] %process%%body%';
+    public static $format = '[%date%] [%level%] %body%';
 
     /**
      * 日志输出日期格式
