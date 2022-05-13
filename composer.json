@@ -26,11 +26,15 @@
     "minimum-stability": "stable",
     "require": {
         "php": "^7.2 || ^7.3 || ^7.4 || ^8.0 || ^8.1",
-        "psr/log": "^1 || ^2 || ^3"
+        "psr/log": "^1 || ^2 || ^3",
+        "symfony/polyfill-mbstring": "^1.0"
     },
     "config": {
         "optimize-autoloader": true,
         "sort-packages": true
+    },
+    "suggest": {
+        "ext-mbstring": "Use C/C++ extension instead of polyfill will be more efficient"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.2",
