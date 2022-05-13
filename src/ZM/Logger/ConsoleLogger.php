@@ -66,6 +66,13 @@ class ConsoleLogger extends AbstractLogger
     protected static $log_level;
 
     /**
+     * 静态上下文
+     *
+     * @var array
+     */
+    protected $static_context = [];
+
+    /**
      * 创建一个 ConsoleLogger 实例
      *
      * @param string $level 日志等级
@@ -147,8 +154,16 @@ class ConsoleLogger extends AbstractLogger
             [date(self::$date_format), strtoupper(substr(self::$levels[$level], 0, 4)), $message],
             self::$format
         );
-        $output = $this->interpolate($output, $context);
+        $output = $this->interpolate($output, array_merge($this->static_context, $context));
         echo $this->colorize($output, $level) . "\n";
+    }
+
+    /**
+     * 添加静态上下文
+     */
+    public function addStaticContext(array $context): void
+    {
+        $this->static_context = array_merge($this->static_context, $context);
     }
 
     /**
