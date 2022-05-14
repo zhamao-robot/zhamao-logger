@@ -219,7 +219,10 @@ class ConsoleLogger extends AbstractLogger
             case is_string($item):
                 return $item;
             case is_array($item):
-                return 'array' . json_encode($item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS);
+                if (extension_loaded('json')) {
+                    return 'array' . json_encode($item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS);
+                }
+                return var_export($item, true);
             case is_object($item):
                 return get_class($item);
             case is_resource($item):
