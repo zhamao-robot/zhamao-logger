@@ -221,14 +221,28 @@ class TablePrinter
     public function fetchTerminalSize(): int
     {
         if (!isset($this->terminal_size)) {
+            /* @phpstan-ignore-next-line */
             if (STDIN === false) {
                 return $this->terminal_size = 79;
             }
-            $size = exec('stty size 2>/dev/null');
+            $size = 0;
+            if (DIRECTORY_SEPARATOR === '\\') {
+                exec('mode con', $out);
+                foreach ($out as $v) {
+                    if (strpos($v, 'Columns:') !== false) {
+                        $num = trim(explode('Columns:', $v)[1]);
+                        $size = intval($num);
+                        break;
+                    }
+                }
+            } else {
+                $size = exec('stty size 2>/dev/null');
+                $size = (int) explode(' ', trim($size))[1];
+            }
             if (empty($size)) {
                 return $this->terminal_size = 79;
             }
-            return $this->terminal_size = (int) explode(' ', trim($size))[1];
+            return $this->terminal_size = $size;
         }
         return $this->terminal_size;
     }
