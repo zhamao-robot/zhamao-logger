@@ -10,7 +10,7 @@ use Psr\Log\LogLevel;
 
 class ConsoleLogger extends AbstractLogger
 {
-    public const VERSION = '1.0.1';
+    public const VERSION = '1.0.2';
 
     /**
      * 日志输出格式
