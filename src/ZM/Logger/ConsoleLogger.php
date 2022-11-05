@@ -10,7 +10,7 @@ use Psr\Log\LogLevel;
 
 class ConsoleLogger extends AbstractLogger
 {
-    public const VERSION = '1.0.0-alpha';
+    public const VERSION = '1.1.0';
 
     /**
      * 日志输出格式
@@ -80,13 +80,45 @@ class ConsoleLogger extends AbstractLogger
     protected $log_callbacks = [];
 
     /**
+     * Stream 写入
+     *
+     * @var null|int|resource
+     */
+    protected $stream;
+
+    /**
+     * 是否带颜色
+     *
+     * @var bool
+     */
+    protected $decorated;
+
+    /**
      * 创建一个 ConsoleLogger 实例
      *
-     * @param string $level 日志等级
+     * @param string        $level  日志等级
+     * @param null|resource $stream
      */
-    public function __construct(string $level = LogLevel::INFO)
+    public function __construct(string $level = LogLevel::INFO, $stream = null, bool $decorated = true)
     {
+        $this->decorated = $decorated;
         self::$log_level = $this->castLogLevel($level);
+        if (!$stream || !is_resource($stream) || get_resource_type($stream) !== 'stream') {
+            return;
+        }
+        $stat = fstat($stream);
+        if (!$stat) {
+            return;
+        }
+        if (($stat['mode'] & 0170000) === 0100000) { // whether is regular file
+            $this->decorated = false;
+        } else {
+            $this->decorated =
+                PHP_OS_FAMILY !== 'Windows' // linux or unix
+                && function_exists('posix_isatty')
+                && posix_isatty($stream); // whether is interactive terminal
+        }
+        $this->stream = $stream;
     }
 
     /**
@@ -128,7 +160,7 @@ class ConsoleLogger extends AbstractLogger
      */
     public function trace(): void
     {
-        $log = "Stack trace:\n";
+        $log = 'Stack trace:' . PHP_EOL;
         $trace = debug_backtrace();
         //array_shift($trace);
         foreach ($trace as $i => $t) {
@@ -142,10 +174,20 @@ class ConsoleLogger extends AbstractLogger
             if (isset($t['object']) && is_object($t['object'])) {
                 $log .= get_class($t['object']) . '->';
             }
-            $log .= "{$t['function']}()\n";
+            $log .= "{$t['function']}()" . PHP_EOL;
         }
-        $log = $this->colorize($log, $this->castLogLevel(LogLevel::DEBUG));
-        echo $log;
+        if ($this->decorated) {
+            $log = $this->colorize($log, $this->castLogLevel(LogLevel::DEBUG));
+        }
+
+        // use stream
+        if ($this->stream) {
+            fwrite($this->stream, $log);
+            fflush($this->stream);
+        } else {
+            // use plain text output
+            echo $log;
+        }
     }
 
     /**
@@ -185,7 +227,19 @@ class ConsoleLogger extends AbstractLogger
             }
         }
 
-        echo $this->colorize($output, $level) . "\n";
+        if ($this->decorated) {
+            $output = $this->colorize($output, $level) . PHP_EOL;
+        } else {
+            $output = $output . PHP_EOL;
+        }
+        // use stream
+        if ($this->stream) {
+            fwrite($this->stream, $output);
+            fflush($this->stream);
+        } else {
+            // use plain text output
+            echo $output;
+        }
     }
 
     /**
@@ -219,7 +273,7 @@ class ConsoleLogger extends AbstractLogger
             case is_string($item):
                 return $item;
             case is_array($item):
-                return 'array' . json_encode($item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS);
+                return 'array' . (extension_loaded('json') ? json_encode($item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS) : '');
             case is_object($item):
                 return get_class($item);
             case is_resource($item):
