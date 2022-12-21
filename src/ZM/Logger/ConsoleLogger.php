@@ -140,6 +140,27 @@ class ConsoleLogger extends AbstractLogger
     }
 
     /**
+     * 插入字段到指定字段之前，或之后
+     * @param string $field    字段名
+     * @param string $alter    要插入的字段
+     * @param string $position 插入位置，before 或 after
+     */
+    public static function alterFormat(string $field, string $alter, string $position = 'before'): void
+    {
+        $format = self::$format;
+        $pos = strpos($format, $field);
+        if ($pos === false) {
+            return;
+        }
+        if ($position === 'before') {
+            $format = substr_replace($format, $alter, $pos, 0);
+        } else {
+            $format = substr_replace($format, $alter, $pos + strlen($field), 0);
+        }
+        self::$format = $format;
+    }
+
+    /**
      * 添加静态上下文
      */
     public function addStaticContext(array $context): void
@@ -201,27 +222,6 @@ class ConsoleLogger extends AbstractLogger
         $string = $this->stringify($string);
         $styles = self::$styles[$level] ?? [];
         return ConsoleColor::apply($styles, $string)->__toString();
-    }
-
-    /**
-     * 插入字段到指定字段之前，或之后
-     * @param string $field    字段名
-     * @param string $alter    要插入的字段
-     * @param string $position 插入位置，before 或 after
-     */
-    public function alterFormat(string $field, string $alter, string $position = 'before'): void
-    {
-        $format = self::$format;
-        $pos = strpos($format, $field);
-        if ($pos === false) {
-            return;
-        }
-        if ($position === 'before') {
-            $format = substr_replace($format, $alter, $pos, 0);
-        } else {
-            $format = substr_replace($format, $alter, $pos + strlen($field), 0);
-        }
-        self::$format = $format;
     }
 
     /**
