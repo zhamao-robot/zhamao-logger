@@ -237,7 +237,12 @@ class TablePrinter
                 }
             } else {
                 $size = exec('stty size 2>/dev/null');
-                $size = (int) explode(' ', trim($size))[1];
+                // in case stty is not available
+                if (empty($size)) {
+                    $size = 0;
+                } else {
+                    $size = (int) explode(' ', trim($size))[1];
+                }
             }
             if (empty($size)) {
                 return $this->terminal_size = 79;
