@@ -17,7 +17,7 @@ class ConsoleLogger extends AbstractLogger
      *
      * @var string
      */
-    public static $format = '[%date%] [%level%] %body%';
+    public static $format = '[%date%] [%level%] %caller% %body%';
 
     /**
      * 日志输出日期格式
@@ -140,6 +140,27 @@ class ConsoleLogger extends AbstractLogger
     }
 
     /**
+     * 插入字段到指定字段之前，或之后
+     * @param string $field    字段名
+     * @param string $alter    要插入的字段
+     * @param string $position 插入位置，before 或 after
+     */
+    public static function alterFormat(string $field, string $alter, string $position = 'before'): void
+    {
+        $format = self::$format;
+        $pos = strpos($format, $field);
+        if ($pos === false) {
+            return;
+        }
+        if ($position === 'before') {
+            $format = substr_replace($format, $alter, $pos, 0);
+        } else {
+            $format = substr_replace($format, $alter, $pos + strlen($field), 0);
+        }
+        self::$format = $format;
+    }
+
+    /**
      * 添加静态上下文
      */
     public function addStaticContext(array $context): void
@@ -215,8 +236,13 @@ class ConsoleLogger extends AbstractLogger
         }
 
         $output = str_replace(
-            ['%date%', '%level%', '%body%'],
-            [date(self::$date_format), strtoupper(substr(self::$levels[$level], 0, 4)), $message],
+            ['%date%', '%level%', '%body%', '%caller%'],
+            [
+                date(self::$date_format),
+                strtoupper(substr(self::$levels[$level], 0, 4)),
+                $message,
+                $this->getCaller(),
+            ],
             self::$format
         );
         $output = $this->interpolate($output, array_merge($this->static_context, $context));
@@ -230,7 +256,7 @@ class ConsoleLogger extends AbstractLogger
         if ($this->decorated) {
             $output = $this->colorize($output, $level) . PHP_EOL;
         } else {
-            $output = $output . PHP_EOL;
+            $output .= PHP_EOL;
         }
         // use stream
         if ($this->stream) {
@@ -312,5 +338,24 @@ class ConsoleLogger extends AbstractLogger
         }
 
         return strtr($message, $replace);
+    }
+
+    /**
+     * 获取调用者信息
+     */
+    private function getCaller(): string
+    {
+        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        $caller = $trace[1] ?? [];
+        $file = $caller['file'] ?? '';
+        if ($file) {
+            // 截取路径，获取 src 之后至多两级目录
+            $path = substr($file, strpos($file, 'src') + 4);
+            $path = explode(DIRECTORY_SEPARATOR, $path);
+            $path = array_slice($path, 0, 2);
+        } else {
+            $path = ['unknown'];
+        }
+        return implode(' > ', $path);
     }
 }
