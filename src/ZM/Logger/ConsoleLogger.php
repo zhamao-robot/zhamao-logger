@@ -10,7 +10,7 @@ use Psr\Log\LogLevel;
 
 class ConsoleLogger extends AbstractLogger
 {
-    public const VERSION = '1.1.1';
+    public const VERSION = '1.1.2';
 
     /**
      * 日志输出格式
@@ -213,12 +213,14 @@ class ConsoleLogger extends AbstractLogger
         if (!$this->shouldLog($level)) {
             return;
         }
+        $log_replace = [
+            '%date%' => date(self::$date_format),
+            '%level%' => strtoupper(substr(self::$levels[$level], 0, 4)),
+            '%body%' => $message,
+            '%level_short%' => strtoupper(substr(self::$levels[$level], 0, 1)),
+        ];
 
-        $output = str_replace(
-            ['%date%', '%level%', '%body%'],
-            [date(self::$date_format), strtoupper(substr(self::$levels[$level], 0, 4)), $message],
-            self::$format
-        );
+        $output = str_replace(array_keys($log_replace), array_values($log_replace), self::$format);
         $output = $this->interpolate($output, array_merge($this->static_context, $context));
 
         foreach ($this->log_callbacks as $callback) {
