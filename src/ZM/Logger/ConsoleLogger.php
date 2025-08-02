@@ -171,6 +171,7 @@ class ConsoleLogger extends AbstractLogger
                 $t['line'] = 0;
             }
             $log .= "#{$i} {$t['file']}({$t['line']}): ";
+            /** @phpstan-ignore-next-line */
             if (isset($t['object']) && is_object($t['object'])) {
                 $log .= get_class($t['object']) . '->';
             }
