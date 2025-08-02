@@ -137,8 +137,8 @@ class TablePrinter
                             $line_data[$current_line] = [
                                 'used' => $valid_width - $k_len - 2 - $partial_v_len,
                                 'can_put_second' => false,
-                                'lines' => $k . ': ' .
-                                    ConsoleColor::apply([$this->value_color], $partial_v . str_pad('', $valid_width - $k_len - 2 - $partial_v_len, '.')),
+                                'lines' => $k . ': '
+                                    . ConsoleColor::apply([$this->value_color], $partial_v . str_pad('', $valid_width - $k_len - 2 - $partial_v_len, '.')),
                             ];
                             ++$current_line;
                         // 下一个参数

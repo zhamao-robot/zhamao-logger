@@ -10,7 +10,7 @@ use Psr\Log\LogLevel;
 
 class ConsoleLogger extends AbstractLogger
 {
-    public const VERSION = '1.1.2';
+    public const VERSION = '1.1.3';
 
     /**
      * 日志输出格式
@@ -113,8 +113,8 @@ class ConsoleLogger extends AbstractLogger
         if (($stat['mode'] & 0170000) === 0100000) { // whether is regular file
             $this->decorated = false;
         } else {
-            $this->decorated =
-                PHP_OS_FAMILY !== 'Windows' // linux or unix
+            $this->decorated
+                = PHP_OS_FAMILY !== 'Windows' // linux or unix
                 && function_exists('posix_isatty')
                 && posix_isatty($stream); // whether is interactive terminal
         }
@@ -162,7 +162,7 @@ class ConsoleLogger extends AbstractLogger
     {
         $log = 'Stack trace:' . PHP_EOL;
         $trace = debug_backtrace();
-        //array_shift($trace);
+        // array_shift($trace);
         foreach ($trace as $i => $t) {
             if (!isset($t['file'])) {
                 $t['file'] = 'unknown';
@@ -203,16 +203,10 @@ class ConsoleLogger extends AbstractLogger
         return ConsoleColor::apply($styles, $string)->__toString();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public function log($level, $message, array $context = []): void
     {
         $level = $this->castLogLevel($level);
 
-        if (!$this->shouldLog($level)) {
-            return;
-        }
         $log_replace = [
             '%date%' => date(self::$date_format),
             '%level%' => strtoupper(substr(self::$levels[$level], 0, 4)),
@@ -224,9 +218,13 @@ class ConsoleLogger extends AbstractLogger
         $output = $this->interpolate($output, array_merge($this->static_context, $context));
 
         foreach ($this->log_callbacks as $callback) {
-            if ($callback($level, $output, $message, $context) === false) {
+            if ($callback($level, $output, $message, $context, $this->shouldLog($level)) === false) {
                 return;
             }
+        }
+
+        if (!$this->shouldLog($level)) {
+            return;
         }
 
         if ($this->decorated) {
@@ -247,13 +245,13 @@ class ConsoleLogger extends AbstractLogger
     /**
      * 转换日志等级
      */
-    private function castLogLevel(string $level): int
+    protected function castLogLevel(string $level): int
     {
         if (in_array($level, self::$levels, true)) {
             return array_flip(self::$levels)[$level];
         }
 
-        throw new InvalidArgumentException('无效的日志等级');
+        throw new InvalidArgumentException('Invalid log level: ' . $level);
     }
 
     /**
@@ -261,7 +259,7 @@ class ConsoleLogger extends AbstractLogger
      *
      * @param mixed $item 日志内容
      */
-    private function stringify($item): string
+    protected function stringify($item): string
     {
         switch (true) {
             case is_callable($item):
@@ -295,7 +293,7 @@ class ConsoleLogger extends AbstractLogger
     /**
      * 判断是否应该记录该等级日志
      */
-    private function shouldLog(int $level): bool
+    protected function shouldLog(int $level): bool
     {
         return $level <= self::$log_level;
     }
@@ -306,7 +304,7 @@ class ConsoleLogger extends AbstractLogger
      * @param string $message 日志内容
      * @param array  $context 变量列表
      */
-    private function interpolate(string $message, array $context = []): string
+    protected function interpolate(string $message, array $context = []): string
     {
         $replace = [];
         foreach ($context as $key => $value) {
