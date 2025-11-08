@@ -10,7 +10,7 @@ use Psr\Log\LogLevel;
 
 class ConsoleLogger extends AbstractLogger
 {
-    public const VERSION = '1.1.3';
+    public const VERSION = '1.1.4';
 
     /**
      * 日志输出格式
@@ -121,6 +121,11 @@ class ConsoleLogger extends AbstractLogger
         $this->stream = $stream;
     }
 
+    public function setLevel(string $level): void
+    {
+        self::$log_level = $this->castLogLevel($level);
+    }
+
     /**
      * 获取当前样式表
      *
@@ -171,7 +176,7 @@ class ConsoleLogger extends AbstractLogger
                 $t['line'] = 0;
             }
             $log .= "#{$i} {$t['file']}({$t['line']}): ";
-            /** @phpstan-ignore-next-line */
+            /* @phpstan-ignore-next-line */
             if (isset($t['object']) && is_object($t['object'])) {
                 $log .= get_class($t['object']) . '->';
             }
@@ -313,5 +318,10 @@ class ConsoleLogger extends AbstractLogger
         }
 
         return strtr($message, $replace);
+    }
+
+    public function setDecorated(bool $decorated): void
+    {
+        $this->decorated = $decorated;
     }
 }
