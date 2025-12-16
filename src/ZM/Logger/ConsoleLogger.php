@@ -243,8 +243,12 @@ class ConsoleLogger extends AbstractLogger
             fwrite($this->stream, $output);
             fflush($this->stream);
         } else {
-            // use plain text output
-            echo $output;
+            if ($level <= 4 && $this->use_stderr) {
+                fwrite(STDERR, $output);
+            } else {
+                // use plain text output
+                echo $output;
+            }
         }
     }
 

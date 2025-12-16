@@ -1,6 +1,6 @@
 {
     "name": "zhamao/logger",
-    "description": "Another Console Logger for CLI Applications",
+    "description": "Another Colorful Console Logger for CLI Applications",
     "type": "library",
     "license": "Apache-2.0",
     "autoload": {
@@ -16,7 +16,7 @@
     "authors": [
         {
             "name": "jerry",
-            "email": "admin@zhamao.me"
+            "email": "github@cwcc.me"
         },
         {
             "name": "sunxyw",
