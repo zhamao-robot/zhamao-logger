@@ -10,7 +10,7 @@ use Psr\Log\LogLevel;
 
 class ConsoleLogger extends AbstractLogger
 {
-    public const VERSION = '1.1.4';
+    public const VERSION = '1.1.5';
 
     /**
      * 日志输出格式
@@ -93,13 +93,15 @@ class ConsoleLogger extends AbstractLogger
      */
     protected $decorated;
 
+    protected $use_stderr = false;
+
     /**
      * 创建一个 ConsoleLogger 实例
      *
      * @param string        $level  日志等级
      * @param null|resource $stream
      */
-    public function __construct(string $level = LogLevel::INFO, $stream = null, bool $decorated = true)
+    public function __construct(string $level = LogLevel::INFO, $stream = null, bool $decorated = true, bool $use_stderr = false)
     {
         $this->decorated = $decorated;
         self::$log_level = $this->castLogLevel($level);
@@ -119,6 +121,7 @@ class ConsoleLogger extends AbstractLogger
                 && posix_isatty($stream); // whether is interactive terminal
         }
         $this->stream = $stream;
+        $this->use_stderr = $use_stderr;
     }
 
     public function setLevel(string $level): void
@@ -252,6 +255,11 @@ class ConsoleLogger extends AbstractLogger
         }
     }
 
+    public function setDecorated(bool $decorated): void
+    {
+        $this->decorated = $decorated;
+    }
+
     /**
      * 转换日志等级
      */
@@ -322,10 +330,5 @@ class ConsoleLogger extends AbstractLogger
         }
 
         return strtr($message, $replace);
-    }
-
-    public function setDecorated(bool $decorated): void
-    {
-        $this->decorated = $decorated;
     }
 }
