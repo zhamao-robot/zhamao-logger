@@ -10,7 +10,7 @@ use Psr\Log\LogLevel;
 
 class ConsoleLogger extends AbstractLogger
 {
-    public const VERSION = '1.1.5';
+    public const VERSION = '1.1.6';
 
     /**
      * 日志输出格式
@@ -218,6 +218,7 @@ class ConsoleLogger extends AbstractLogger
 
         $log_replace = [
             '%date%' => date(self::$date_format),
+            '%level_long%' => strtoupper(self::$levels[$level]),
             '%level%' => strtoupper(substr(self::$levels[$level], 0, 4)),
             '%body%' => $message,
             '%level_short%' => strtoupper(substr(self::$levels[$level], 0, 1)),
