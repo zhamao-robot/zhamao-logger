@@ -10,7 +10,7 @@ use Psr\Log\LogLevel;
 
 class ConsoleLogger extends AbstractLogger
 {
-    public const VERSION = '1.1.8';
+    public const VERSION = '1.1.9';
 
     /**
      * 日志输出格式
@@ -258,14 +258,14 @@ class ConsoleLogger extends AbstractLogger
         try {
             // use stream
             if ($this->stream) {
-                @fwrite($this->stream, $output);
-                @fflush($this->stream);
+                fwrite($this->stream, $output);
+                fflush($this->stream);
             } else {
                 if ($level <= 4 && $this->use_stderr) {
-                    @fwrite(STDERR, $output);
+                    fwrite(STDERR, $output);
                 } else {
                     // use plain text output
-                    @echo $output;
+                    echo $output;
                 }
             }
         } finally {
