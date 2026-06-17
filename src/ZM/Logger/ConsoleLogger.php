@@ -10,7 +10,7 @@ use Psr\Log\LogLevel;
 
 class ConsoleLogger extends AbstractLogger
 {
-    public const VERSION = '1.1.6';
+    public const VERSION = '1.1.7';
 
     /**
      * 日志输出格式
@@ -85,6 +85,13 @@ class ConsoleLogger extends AbstractLogger
      * @var null|int|resource
      */
     protected $stream;
+
+    /**
+     * 递归保护标志 — 防止日志写入失败时错误处理器再次调用日志导致死循环 CPU 100%
+     *
+     * @var bool
+     */
+    protected static $in_log = false;
 
     /**
      * 是否带颜色
@@ -242,17 +249,27 @@ class ConsoleLogger extends AbstractLogger
         } else {
             $output = $output . PHP_EOL;
         }
-        // use stream
-        if ($this->stream) {
-            fwrite($this->stream, $output);
-            fflush($this->stream);
-        } else {
-            if ($level <= 4 && $this->use_stderr) {
-                fwrite(STDERR, $output);
+        // 递归保护：如果上一次日志写入触发了错误（如终端关闭后 STDOUT/STDERR 破损），
+        // 跳过本次输出，防止错误处理器递归调用导致 CPU 100% 空耗
+        if (self::$in_log) {
+            return;
+        }
+        self::$in_log = true;
+        try {
+            // use stream
+            if ($this->stream) {
+                @fwrite($this->stream, $output);
+                @fflush($this->stream);
             } else {
-                // use plain text output
-                echo $output;
+                if ($level <= 4 && $this->use_stderr) {
+                    @fwrite(STDERR, $output);
+                } else {
+                    // use plain text output
+                    @echo $output;
+                }
             }
+        } finally {
+            self::$in_log = false;
         }
     }
 
